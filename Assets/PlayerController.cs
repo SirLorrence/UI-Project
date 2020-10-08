@@ -1,25 +1,20 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEditorInternal;
-using UnityEngine;
-using UnityEngine.Serialization;
+﻿using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    private Vector3 movement;
-    private Rigidbody rb;
-    public float speed = 5f;
-    private float walkSpeed = 5f;
-    private float sprintSpeed = 10f;
-    [SerializeField] private float staminaValue;
     private const float MAX_STAMINA = 10;
-    private bool isGrounded;
+    private const float MAX_HEALTH = 100;
+    public float speed = 5f;
+    [SerializeField] private float staminaValue;
 
 
     public float healthValue;
-    private const float MAX_HEALTH = 100;
     public bool isRunning;
+    private bool isGrounded;
+    private Vector3 movement;
+    private Rigidbody rb;
+    private readonly float sprintSpeed = 10f;
+    private readonly float walkSpeed = 5f;
 
     private void Awake()
     {
@@ -42,10 +37,13 @@ public class PlayerController : MonoBehaviour
         var y = Input.GetAxis("Vertical");
         Jump();
         run();
-        movement = (x * transform.right + y * transform.forward);
+        movement = x * transform.right + y * transform.forward;
     }
 
-    private void FixedUpdate() => rb.MovePosition(transform.position + (movement * (speed * Time.deltaTime)));
+    private void FixedUpdate()
+    {
+        rb.MovePosition(transform.position + movement * (speed * Time.deltaTime));
+    }
 
     private void LateUpdate()
     {
@@ -53,34 +51,37 @@ public class PlayerController : MonoBehaviour
         UI_Manager.Instance.UpdateHealthBar(healthValue);
     }
 
-    void run()
+    private void run()
     {
         if (Input.GetKey(KeyCode.LeftShift)) SetRunning(true);
         else SetRunning(false);
         if (isRunning)
         {
-            staminaValue -= (Time.deltaTime * 2);
+            staminaValue -= Time.deltaTime * 2;
             if (staminaValue < 0)
             {
                 staminaValue = 0;
                 SetRunning(false);
             }
         }
-        else if (staminaValue < MAX_STAMINA) staminaValue += Time.deltaTime;
+        else if (staminaValue < MAX_STAMINA)
+        {
+            staminaValue += Time.deltaTime;
+        }
     }
 
-    void SetRunning(bool canRun)
+    private void SetRunning(bool canRun)
     {
-        this.isRunning = canRun;
-        speed = (canRun) ? sprintSpeed : walkSpeed;
+        isRunning = canRun;
+        speed = canRun ? sprintSpeed : walkSpeed;
     }
 
 
-    void Jump()
+    private void Jump()
     {
-        Vector3 rayLenght = new Vector3(0, -2, 0);
-        float hitDistance = 1.3f;
-        isGrounded = (Physics.Raycast(transform.position, rayLenght, hitDistance)) ? true : false;
+        var rayLenght = new Vector3(0, -2, 0);
+        var hitDistance = 1.3f;
+        isGrounded = Physics.Raycast(transform.position, rayLenght, hitDistance) ? true : false;
         if (Input.GetKeyDown(KeyCode.Space) && isGrounded) rb.AddForce(Vector3.up * 5f, ForceMode.Impulse);
     }
 }
